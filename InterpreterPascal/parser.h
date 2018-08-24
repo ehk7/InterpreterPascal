@@ -14,10 +14,28 @@ public:
 	Token(token_t type, int value);
 };
 
+class Lexer {
+	std::string text;
+	int pos;
+	char current_char;
+
+	void advance();
+	void skip_whitespace();
+	int integer();
+	void error();
+	bool end_of_text();
+
+public:
+	Token * get_next_token();
+
+	Lexer(std::string text); 
+};
+
 class Interpreter {
 	std::string text;
 	int pos;
 	Token * current_token;
+	Lexer lex;
 public:
 
 	Interpreter(std::string text);
