@@ -17,7 +17,7 @@ Lexer::Lexer(std::string text) {
 }
 
 void Lexer::advance() {
-	//handle EOF
+	//handle EOF,l
 }
 
 void Lexer::skip_whitespace() {
@@ -31,27 +31,46 @@ void Lexer::skip_whitespace() {
 
 int Lexer::integer() {
 	int start_pos = pos;
-	while (48 <= current_char && 57 >= current_char) {
+	current_char = this->text[pos];
+	int sign = 1;
+	if (current_char == '-') {
+		//sign = -1;
 		pos++;
-		current_char = text[pos];
+		current_char = this->text[pos];
 	}
+	while (48 <= current_char && 57 >= current_char) {
+		current_char = text[pos];
+		pos++;
+	}
+	pos--;
 	std::string retstr = text.substr(start_pos, pos - start_pos);
-	return std::stoi(retstr);
+	return sign*std::stoi(retstr);
 }
 
-void Lexer::error() {
-	perror("Lexer error occured!\n");
+void Lexer::error(std::string msg) {
+	std::cout << msg << std::endl;
 	exit(0);
 }
 bool Lexer::end_of_text() {
 	return (this->pos >= text.length());
 }
 
+Token Lexer::peek() {
+	int pos = this->pos;
+	Token * next = this->get_next_token();
+	Token ret = *next;
+	delete next;
+	this->pos = pos;
+	this->current_char = this->text[pos];
+	return ret;
+}
+
 Token * Lexer::get_next_token() {
 	std::string text = this->text;
-	if (this->pos > text.length())
+	if (this->pos >= text.length())
 		return new Token(eof_t, "");
 
+	this->skip_whitespace();
 
 	char current_char = text[pos];
 
@@ -76,74 +95,72 @@ Token * Lexer::get_next_token() {
 		pos++;
 		return new Token(op_t, "*");
 	}
-	error();
+	error("Error getting next token: unrecognised");
 }
 
-Interpreter::Interpreter(std::string text) {
+Interpreter::Interpreter(std::string text):lex(text) {
 	this->text = text;
 	this->pos = 0;
 	this->current_token = NULL;
-	this->lex = Lexer(text);
 }
 
-//Token * Interpreter::get_next_token() {
-//	//
-//}
-
 void Interpreter::eat(token_t type) {
-	this->current_token = this->get_next_token();
+	if (type == int_t) {
+		this->current_token= new Token(int_t, lex.integer());
+
+	}
+	else {
+		this->current_token = lex.get_next_token();
+	}
 	if (this->current_token->type != type) {
-		error();
+		error("Error eating!");
 	}
 }
 
-//bool Interpreter::end_of_text() {
-//	//
-//}
 
-void Interpreter::error() {
-	perror("Interpreter error occured!\n");
+void Interpreter::error(std::string msg) {
+	std::cout << msg << std::endl;
 	exit(0);
 }
 
 float Interpreter::expr() {
-	this->eat(int_t);
-	Token left = *this->current_token;
-	float lv = std::stoi(left.value);
-	float rv = 0;
-	while (!end_of_text()) {
+	float lv = this->term();
+	Token next = lex.peek();
+	while(next.value=="+" || next.value=="-") {
 		this->eat(op_t);
-		Token op = *this->current_token;
-		this->eat(int_t);
-		Token right = *this->current_token;
-		rv = std::stoi(right.value);
-		if (op.value[0] == '+')
-			lv += rv;
-		else if (op.value[0] == '-')
-			lv -= rv;
-		else if (op.value[0] == '/')
-			lv /= rv;
-		else if (op.value[0] == '*')
-			lv *= rv;
+		if (this->current_token->value == "+") {
+			lv += this->term();
+		}
+		else if(this->current_token->value == "-") {
+			lv -= this->term();
+		}
+		else {
+			break;
+		}
+		next = lex.peek();
 	}
 	return lv;
 }
 
 float Interpreter::term() {
 	float lv = this->factor();
-	this->eat(op_t);
-	Token op = *this->current_token;
-	float rv = this->factor();
-	if (op.value[0] == '*')
-		return rv * lv;
-	else if(op.value[0] == '/')
-		return rv / lv;
+	Token next = lex.peek();
 
-	perror("invalid syntax\nTERM((*|/)TERM)*\n");
-	return 0;
+	while(next.value=="*" || next.value=="/") {
+		this->eat(op_t);
+		if (this->current_token->value == "*") {
+			lv *= this->factor();
+		}
+		else if (this->current_token->value == "/") {
+			lv /= this->factor();
+		}
+		next = lex.peek();
+	}
+	return lv;
 }
 
 float Interpreter::factor() {
 	this->eat(int_t);
+	
 	return (float)std::stoi(this->current_token->value);
 }

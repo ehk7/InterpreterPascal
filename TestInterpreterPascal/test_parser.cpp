@@ -59,7 +59,18 @@ TEST(Lexer, get_next_token_spaces) {
 		i++;
 	}
 }
-
+/*/
+TEST(Lexer, peek) {
+	std::string exp = "5  *7";
+	Lexer lex(exp);
+	EXPECT_EQ(lex.peek().value, "5");
+	lex.get_next_token();
+	EXPECT_EQ(lex.peek().value, "*");
+	lex.get_next_token();
+	EXPECT_EQ(lex.peek().value, "7");
+	
+}
+*/
 TEST(Interpreter, factor_basic) {
 	std::string exp = "55*7";
 	Interpreter intp(exp);
@@ -95,7 +106,7 @@ TEST(Interpreter, term_basic) {
 TEST(Interpreter, term_full) {
 	std::string exp = "55+7-78";
 	Interpreter intp(exp);
-	EXPECT_EQ(intp.expr(), 16);
+	EXPECT_EQ(intp.expr(), -16);
 	intp = Interpreter("-0-434");
 	EXPECT_EQ(intp.expr(), -434);
 	intp = Interpreter("-6+44");

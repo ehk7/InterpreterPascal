@@ -21,13 +21,13 @@ class Lexer {
 
 	void advance();
 	void skip_whitespace();
-	int integer();
-	void error();
-	bool end_of_text();
+	void error(std::string msg="Lexer error occured");
 
 public:
+	Token peek();
+	int integer();
 	Token * get_next_token();
-
+	bool end_of_text();
 	Lexer(std::string text); 
 };
 
@@ -36,16 +36,17 @@ class Interpreter {
 	int pos;
 	Token * current_token;
 	Lexer lex;
+
+	float term();
+	float factor();
 public:
 
 	Interpreter(std::string text);
-	Token * get_next_token();
+//	Token * get_next_token();
 	void eat(token_t type);
-	void error();
-	bool end_of_text();
+	void error(std::string msg = "Interpreter error occured");
+//	bool end_of_text();
 
 	float expr();
-	float term();
-	float factor();
 };
 
